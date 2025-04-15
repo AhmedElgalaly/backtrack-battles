@@ -15,6 +15,27 @@ public:
 	// Player and CellStatus type enumerations
 	enum class Player { PLAYER1, PLAYER2 };
 	enum class CellStatus { EMPTY, PLAYER_1, PLAYER_2 };
+	
+	// Move structure to represent a move in the game
+	struct Move
+	{
+		int fromRow;
+		int fromCol;
+		int toRow;
+		int toCol;
+
+		Move(int fromRow, int fromCol, int toRow, int toCol)
+			: fromRow(fromRow), fromCol(fromCol), toRow(toRow), toCol(toCol) {
+		}
+
+		bool operator==(const Move& other) const;
+	};
+
+	// Adding hash support for GameState class
+	struct GameStateHash {
+		size_t operator()(const GameState& state) const;
+	};
+
 
 	// Constructor and Destructor
 	explicit GameState(int size);

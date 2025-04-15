@@ -288,3 +288,29 @@ bool GameState::isInBounds(int row, int col) const
 	return true;
 }
 
+bool GameState::Move::operator==(const Move& other) const
+{
+	return fromCol == other.fromCol &&
+		fromRow == other.fromRow &&
+		toCol == other.toCol &&
+		toRow == other.toRow;
+}
+
+// Hash function for GameState
+// This function generates a hash value for the GameState object
+// because GameState is a complex object, we need to hash its attributes and to avoid collisions while making solve() function
+size_t GameState::GameStateHash::operator()(const GameState& state) const
+{
+	size_t hashValue = 0;
+	// Hash the size of the board
+	for (const auto& row : state.boardGrid) {
+		for (const auto& cell : row) {
+			hashValue ^= static_cast<int>(cell) + 0x9e3779b9 + (hashValue << 6) + (hashValue >> 2);
+		}
+	}
+
+	// Hash the current player
+	hashValue ^= static_cast<int>(state.currentPlayer);
+
+	return hashValue;
+}
