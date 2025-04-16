@@ -16,14 +16,14 @@ private:
 		GameState::Move bestMove;
 	};
 
-	// Core recursive solving function
+	// Core recursive solving function using backtracking with memoization and minimax decision making
 	bool isGoodState(const GameState& state);
 
 	// Memoization Cache were we store the results of previously computed states
 	std::unordered_map<GameState, StateResult, GameState::GameStateHash> memoizationCache;
 
 	// Current best moves found
-	std::pair<GameState, GameState::Move> bestMoves;
+	std::pair<GameState, GameState::Move> currentBestMove;
 
 	// State stack for backtracking
 	Stack<GameState> stateStack;
@@ -36,7 +36,7 @@ public:
 	bool solve();
 
 	// Get the best move found
-	std::pair<int, int> getBestMove() const;
+	std::pair<GameState, GameState::Move> getBestMove() const;
 
 	// Check if a winning startegy exists
 	bool hasWinningStrategy() const;
