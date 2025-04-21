@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include "GameState.h"
+#include "GameSolver.h"
 #include <limits>
 #include <sstream>
 
@@ -10,6 +11,15 @@ void printBoard(const GameState& state) {
 		std::cout << col << " ";
 	std::cout << "\n";
     std::cout << state.toString() << "\n";
+	std::cout << "Current Player: "
+		<< (state.getCurrentPlayer() == GameState::Player::PLAYER1 ? "1" : "2") << "\n";
+	std::cout << "Best Move For Player " << (state.getCurrentPlayer() == GameState::Player::PLAYER1 ? "1" : "2") << ": ";
+	GameSolver solver(state);
+	solver.solve();
+	std::cout << solver.getBestMove().second.fromRow << " "
+		<< solver.getBestMove().second.fromCol << " "
+		<< solver.getBestMove().second.toRow << " "
+		<< solver.getBestMove().second.toCol << "\n";
 }
 
 void printHelp(int size) {

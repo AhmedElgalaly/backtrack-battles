@@ -1,10 +1,13 @@
 #include "GameState.h"
 #include <stdexcept>
+#include <iostream>
 
 GameState::GameState(int size)
 {
 	if (size < 3)
 	{
+		// for debugging purposes ONLY comment on push
+		std::cerr << "Invalid size: " << size << std::endl;
 		throw std::invalid_argument("Size must be at least 3.");
 	}
 	this->size = size;
@@ -54,10 +57,18 @@ GameState& GameState::operator=(const GameState& other)
 	return *this;
 }
 
-// Generate all possible moves for the current player
-vector<GameState> GameState::generateMoves() const
+bool GameState::operator==(const GameState& other) const
 {
-	vector<GameState> moves;
+	return boardGrid == other.boardGrid &&
+			currentPlayer == other.currentPlayer &&
+			Player1Tokens == other.Player1Tokens &&
+			Player2Tokens == other.Player2Tokens;
+}
+
+// Generate all possible moves for the current player
+vector<GameState::Move> GameState::generateAllPossibleMoves() const
+{
+	vector<Move> moves;
 
 	if (currentPlayer == Player::PLAYER1) {
 		for (const auto& token : Player1Tokens) {
@@ -67,16 +78,12 @@ vector<GameState> GameState::generateMoves() const
 			
 			// Regualr move down (1 step)
 			if (row + 1 < size && boardGrid[row + 1][col] == CellStatus::EMPTY) {
-				GameState newState(*this); // Create a copy of the current state without referencing
-				newState.moveToken(row, col, row + 1, col);
-				moves.push_back(newState);
+				moves.emplace_back(row, col, row + 1, col);
 			}
 
 			// Jump move down (2 steps over opponent)
 			if (row + 2 < size && boardGrid[row + 1][col] == CellStatus::PLAYER_2 && boardGrid[row + 2][col] == CellStatus::EMPTY) {
-				GameState newState(*this); // Create a copy of the current state without referencing
-				newState.moveToken(row, col, row + 2, col);
-				moves.push_back(newState);
+				moves.emplace_back(row, col, row + 2, col);
 			}
 		}
 	}
@@ -86,16 +93,12 @@ vector<GameState> GameState::generateMoves() const
 			int col = token.second;
 			// Check all possible moves for Player 2
 			// Regular move right (1 step)
-			if (col + 1 >= 0 && boardGrid[row][col + 1] == CellStatus::EMPTY) {
-				GameState newState(*this); // Create a copy of the current state without referencing
-				newState.moveToken(row, col, row, col + 1);
-				moves.push_back(newState);
+			if (col + 1 < size && boardGrid[row][col + 1] == CellStatus::EMPTY) {
+				moves.emplace_back(row, col, row, col + 1);
 			}
 			// Jump move right (2 steps over opponent)
-			if (col + 2 >= 0 && boardGrid[row][col + 1] == CellStatus::PLAYER_1 && boardGrid[row][col + 2] == CellStatus::EMPTY) {
-				GameState newState(*this); // Create a copy of the current state without referencing
-				newState.moveToken(row, col, row, col + 2);
-				moves.push_back(newState);
+			if (col + 2 < size && boardGrid[row][col + 1] == CellStatus::PLAYER_1 && boardGrid[row][col + 2] == CellStatus::EMPTY) {
+				moves.emplace_back(row, col, row, col + 2);
 			}
 		}
 	}
@@ -131,26 +134,45 @@ bool GameState::isWinningForPlayer(Player player) const
 	if (player == Player::PLAYER1) {
 		// Player 1 wins if all tokens are at the bottom
 		for (const auto& token : Player1Tokens) {
-			if (token.first < size - 1) return false;
+			if (token.first != size - 1) return false;
 		}
-		return !Player1Tokens.empty();
+		return true;
 	}
 	else {
 		// Player 2 wins if all tokens are at the right
 		for (const auto& token : Player2Tokens) {
-			if (token.second < size - 1) return false;
+			if (token.second != size - 1) return false;
 		}
-		return !Player2Tokens.empty();
+		return true;
 	}
 }
 
 GameState GameState::applyMove(int fromRow, int fromCol, int toRow, int toCol) const
 {
 	if (!isValidMove(fromRow, fromCol, toRow, toCol)) {
+		// for debugging purposes ONLY comment on push
+		std::cerr << "Invalid move attempted: ("
+			<< fromRow << "," << fromCol << ") to ("
+			<< toRow << "," << toCol << ")\n";
 		throw std::invalid_argument("Invalid move");
 	}
 	GameState newState(*this); // Create a copy of the current state without referencing
 	newState.moveToken(fromRow, fromCol, toRow, toCol);
+	newState.switchPlayer(); // Switch the player after applying the move
+	return newState;
+}
+
+GameState GameState::applyMove(const Move& move) const
+{
+	if (!isValidMove(move.fromRow, move.fromCol, move.toRow, move.toCol)) {
+		// for debugging purposes ONLY comment on push
+		std::cerr << "Invalid move attempted: ("
+			<< move.fromRow << "," << move.fromCol << ") to ("
+			<< move.toRow << "," << move.toCol << ")\n";
+		throw std::invalid_argument("Invalid move");
+	}
+	GameState newState(*this); // Create a copy of the current state without referencing
+	newState.moveToken(move.fromRow, move.fromCol, move.toRow, move.toCol);
 	newState.switchPlayer(); // Switch the player after applying the move
 	return newState;
 }
@@ -257,6 +279,11 @@ bool GameState::isValidMove(int fromRow, int fromCol, int toRow, int toCol) cons
 	return false;
 }
 
+bool GameState::isValidMove(const Move& move) const
+{
+	return isValidMove(move.fromRow, move.fromCol, move.toRow, move.toCol);
+}
+
 void GameState::moveToken(int fromRow, int fromCol, int toRow, int toCol)
 {
 	if (boardGrid[fromRow][fromCol] == CellStatus::PLAYER_1)
@@ -288,3 +315,29 @@ bool GameState::isInBounds(int row, int col) const
 	return true;
 }
 
+bool GameState::Move::operator==(const Move& other) const
+{
+	return fromCol == other.fromCol &&
+		fromRow == other.fromRow &&
+		toCol == other.toCol &&
+		toRow == other.toRow;
+}
+
+// Hash function for GameState
+// This function generates a hash value for the GameState object
+// because GameState is a complex object, we need to hash its attributes and to avoid collisions while making solve() function
+size_t GameState::GameStateHash::operator()(const GameState& state) const
+{
+	size_t hashValue = 0;
+	// Hash the size of the board
+	for (const auto& row : state.boardGrid) {
+		for (const auto& cell : row) {
+			hashValue ^= static_cast<int>(cell) + 0x9e3779b9 + (hashValue << 6) + (hashValue >> 2);
+		}
+	}
+
+	// Hash the current player
+	hashValue ^= static_cast<int>(state.currentPlayer);
+
+	return hashValue;
+}
