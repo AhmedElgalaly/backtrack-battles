@@ -49,13 +49,13 @@ public:
 	}
 
 	void push(const GameStateType& gameState) {
-		StackNode* newNode = new StackNode();
-		newNode->gameState = gameState;
-		newNode->next = topNode;
+		StackNode* newNode = new StackNode{ gameState, topNode };
+		/*newNode->gameState = gameState;
+		newNode->next = topNode;*/
 		topNode = newNode;
 	}
 
-	GameStateType pop() {
+	GameStateType& pop() {
 		if (isEmpty()) {
 			throw std::out_of_range("Stack is empty");
 		}
@@ -66,7 +66,7 @@ public:
 		return data;
 	}
 
-	GameStateType top() const {
+	GameStateType& top() const {
 		if (isEmpty()) {
 			throw std::out_of_range("Stack is empty");
 		}

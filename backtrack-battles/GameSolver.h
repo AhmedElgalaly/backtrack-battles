@@ -16,6 +16,18 @@ private:
 		GameState::Move bestMove;
 	};
 
+	// Stack-based backtracking state
+	struct StackFrame {
+		GameState state;
+		size_t moveIndex; // Current move being processed
+		vector<GameState::Move> moves;
+		bool evaluated;
+
+		// Constructor
+		StackFrame() = default;
+		explicit StackFrame(GameState s, vector<GameState::Move> m);
+	};
+
 	// Core recursive solving function using backtracking with memoization and minimax decision making
 	bool isGoodState(const GameState& state);
 
@@ -26,7 +38,9 @@ private:
 	std::pair<GameState, GameState::Move> currentBestMove;
 
 	// State stack for backtracking
-	Stack<GameState> stateStack;
+	Stack<StackFrame> stateStack;
+
+	bool processNextFrame();
 
 public:
 	// Constructor
