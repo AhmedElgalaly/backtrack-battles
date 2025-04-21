@@ -12,11 +12,6 @@
 	@tparam  GameStateType - The type of the game state stored in the stack.
 
 **/
-template<typename GameStateType>
-class Stack
-{
-private:
-
 /**
 	@struct StackNode
 	@brief  structure representing a node in the stack.
@@ -24,6 +19,11 @@ private:
 	Generic programming GameStateType type is used to make it data type-independent.
 	@tparam GameStateType - The type of the game state stored in the stack node.
 **/
+template<typename GameStateType>
+class Stack
+{
+private:
+
 	struct StackNode{
 		GameStateType gameState;
 		StackNode* next;

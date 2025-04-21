@@ -62,13 +62,12 @@ bool GameSolver::processNextFrame()
 
 	StackFrame& frame = stateStack.top();
 
-	// Already evaluated, pop and continue
 	if (frame.evaluated) {
 		stateStack.pop();
 		return true;
 	}
 
-	// Check memoization first
+	// Check memoization using dynamic board state
 	auto memoIt = memoizationCache.find(frame.state);
 	if (memoIt != memoizationCache.end()) {
 		currentBestMove.second = memoIt->second.bestMove;
@@ -76,7 +75,8 @@ bool GameSolver::processNextFrame()
 		return true;
 	}
 
-	// Base case: current player has won
+	// Dynamic win condition check
+	const int currentSize = frame.state.getSize();
 	if (frame.state.isWinningForPlayer(frame.state.getCurrentPlayer())) {
 		memoizationCache[frame.state] = { true, GameState::Move(-1,-1,-1,-1) };
 		currentBestMove = { frame.state, GameState::Move(-1,-1,-1,-1) };
@@ -84,7 +84,7 @@ bool GameSolver::processNextFrame()
 		return true;
 	}
 
-	// Process next move
+	// Process moves using board size-agnostic generation
 	if (frame.moveIndex < frame.moves.size()) {
 		GameState::Move move = frame.moves[frame.moveIndex++];
 		GameState nextState = frame.state.applyMove(move);
@@ -92,20 +92,32 @@ bool GameSolver::processNextFrame()
 		return true;
 	}
 
-	// All moves processed - evaluate
+	// Evaluate all possible moves dynamically
 	bool isGood = false;
 	GameState::Move bestMove(-1, -1, -1, -1);
 
+	// Check all possible subsequent states
 	for (const auto& move : frame.moves) {
 		GameState nextState = frame.state.applyMove(move);
 		auto it = memoizationCache.find(nextState);
-		if (it != memoizationCache.end() && !it->second.isGood) {
-			isGood = true;
-			bestMove = move;
-			break;
+
+		// Size-agnostic win potential check
+		if (it != memoizationCache.end()) {
+			if (!it->second.isGood) {
+				isGood = true;
+				bestMove = move;
+				break;
+			}
+		}
+		else {
+			// Handle unexplored states
+			StackFrame newFrame(nextState, nextState.generateAllPossibleMoves());
+			stateStack.push(newFrame);
+			return true;
 		}
 	}
 
+	// Store results for current state
 	memoizationCache[frame.state] = { isGood, bestMove };
 	if (isGood) {
 		currentBestMove = { frame.state, bestMove };
