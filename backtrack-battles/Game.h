@@ -51,13 +51,44 @@ public:
 
     void cpuMove() {
         if (state.getCurrentPlayer() == GameState::Player::PLAYER1) {
-            GameSolver solver(state);
-            std::cerr << state.toString() << endl;
-            auto bestMove = solver.getBestMove().second;
+            // 1. Explicit type declaration for clarity
+            GameState::Move bestMove(-1, -1, -1, -1);
+            int highestPriority = INT_MIN;
+
+            // 2. Direct move evaluation with early exit
+            const std::vector<GameState::Move> possibleMoves = state.generateAllPossibleMoves();
+
+            // 3. Simple heuristic: prioritize most progressive moves
+            for (const GameState::Move& move : possibleMoves) {
+                // Calculate move priority (custom heuristic)
+                int priority = calculateMovePriority(move);
+
+                if (priority > highestPriority) {
+                    highestPriority = priority;
+                    bestMove = move;
+                }
+            }
+
+            // 4. Fallback to first valid move if no better option
+            if (bestMove.fromRow == -1 && !possibleMoves.empty()) {
+                bestMove = possibleMoves.front();
+            }
+
+            // 5. Apply the selected move
             if (bestMove.fromRow != -1) {
                 state = state.applyMove(bestMove);
                 checkWinCondition();
             }
+        }
+    }
+    int calculateMovePriority(const GameState::Move& move) {
+        // Reward vertical progress for Player 1 (CPU)
+        if (state.getCurrentPlayer() == GameState::Player::PLAYER1) {
+            return (move.toRow - move.fromRow) * 2; // Prioritize bigger jumps
+        }
+        // Reward horizontal progress for Player 2
+        else {
+            return (move.toCol - move.fromCol) * 2;
         }
     }
 
