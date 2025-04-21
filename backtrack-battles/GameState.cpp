@@ -236,6 +236,8 @@ string GameState::toString() const
 
 bool GameState::isValidMove(int fromRow, int fromCol, int toRow, int toCol) const
 {
+	if (toRow >= size || toCol >= size) return false;
+
 	if (!isInBounds(fromRow, fromCol) || !isInBounds(toRow, toCol))
 		return false;
 
